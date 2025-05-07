@@ -17,8 +17,9 @@
     "stripe": "^18.1.0"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.1",
-    "@types/node": "^22.15.12",
+    "@types/node": "^22.15.15",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
