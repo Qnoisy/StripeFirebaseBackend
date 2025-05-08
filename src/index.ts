@@ -97,3 +97,37 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
 	console.log(`✅ Server is running on port ${PORT}`);
 });
+
+app.post(
+	'/check-access',
+	authenticateFirebase,
+	async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+		const userId = req.user?.uid;
+
+		if (!userId) {
+			res.status(401).json({ error: 'Unauthorized' });
+			return next(); // Завершаем выполнение
+		}
+
+		try {
+			const purchasesRef = admin.firestore().collection('purchases');
+
+			// Проверяем наличие доступа
+			const snapshot = await purchasesRef
+				.where('userId', '==', userId)
+				.where('courseAccess', '==', true)
+				.get();
+
+			if (!snapshot.empty) {
+				res.status(200).json({ access: true });
+			} else {
+				res.status(200).json({ access: false });
+			}
+
+			return next();
+		} catch (err) {
+			console.error('Error checking course access:', err);
+			next(new Error('Internal Server Error'));
+		}
+	}
+);
