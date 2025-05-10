@@ -1,6 +1,5 @@
 // src/firebase-admin-export.ts
-
 import * as admin from 'firebase-admin';
+import './firebase-init';
 
-// Просто экспортируем уже инициализированный объект admin
 export default admin;

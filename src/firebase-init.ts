@@ -1,5 +1,4 @@
 // src/firebase-init.ts
-
 import dotenv from 'dotenv';
 import * as admin from 'firebase-admin';
 
@@ -15,5 +14,5 @@ if (!admin.apps.length) {
 		}),
 	});
 } else {
-	console.log('✅ Firebase Admin SDK already initialized.');
+	console.log('Firebase Admin SDK already initialized.');
 }

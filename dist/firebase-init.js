@@ -1,5 +1,4 @@
 "use strict";
-// src/firebase-init.ts
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -37,6 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+// src/firebase-init.ts
 const dotenv_1 = __importDefault(require("dotenv"));
 const admin = __importStar(require("firebase-admin"));
 dotenv_1.default.config();
@@ -51,5 +51,5 @@ if (!admin.apps.length) {
     });
 }
 else {
-    console.log('✅ Firebase Admin SDK already initialized.');
+    console.log('Firebase Admin SDK already initialized.');
 }

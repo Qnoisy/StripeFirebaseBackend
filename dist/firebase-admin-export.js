@@ -1,5 +1,4 @@
 "use strict";
-// src/firebase-admin-export.ts
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -34,6 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+// src/firebase-admin-export.ts
 const admin = __importStar(require("firebase-admin"));
-// Просто экспортируем уже инициализированный объект admin
+require("./firebase-init");
 exports.default = admin;

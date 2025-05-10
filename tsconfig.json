@@ -14,8 +14,9 @@
 		"allowSyntheticDefaultImports": true,
 		"strictPropertyInitialization": false,
 		"noImplicitAny": false,
-		"outDir": "./dist"
+		"outDir": "./dist",
+		"typeRoots": ["./node_modules/@types", "./src/types"]
 	},
-	"include": ["src/**/*.ts"],
+	"include": ["src/**/*.ts", "src/types/express.d.ts"],
 	"exclude": ["node_modules"]
 }
