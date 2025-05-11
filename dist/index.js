@@ -3,7 +3,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-// src/index.ts
 const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const express_1 = __importDefault(require("express"));
@@ -12,10 +11,10 @@ const webhook_1 = __importDefault(require("./webhook"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)({ origin: process.env.FRONTEND_URL }));
-app.use(express_1.default.json());
-// Основные маршруты
+// Используем `express.json()` только для `/api` маршрутов
+app.use('/api', express_1.default.json());
 app.use('/api', routes_1.default);
-// Webhook
+// Вебхук Stripe должен использовать `raw` body
 app.use('/webhook', webhook_1.default);
 // Error Handling Middleware
 app.use((err, req, res, next) => {

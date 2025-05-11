@@ -2,26 +2,25 @@
 import { NextFunction, Request, Response } from 'express';
 import admin from './firebase-admin-export';
 
-export const authenticateFirebase = async (
+export async function authenticateFirebase(
 	req: Request,
 	res: Response,
 	next: NextFunction
-): Promise<void> => {
+): Promise<void> {
 	const authHeader = req.headers.authorization;
 
 	if (!authHeader || !authHeader.startsWith('Bearer ')) {
-		res.status(401).json({ error: 'Unauthorized' });
-		return;
+		return next(new Error('Unauthorized'));
 	}
 
 	const idToken = authHeader.split(' ')[1];
 
 	try {
 		const decodedToken = await admin.auth().verifyIdToken(idToken);
-		req.user = decodedToken;
+		req.user = decodedToken; // Теперь TypeScript должен понимать `req.user`
 		next();
 	} catch (error) {
 		console.error('Error verifying Firebase ID token:', error);
-		res.status(401).json({ error: 'Unauthorized' });
+		next(new Error('Unauthorized'));
 	}
-};
+}

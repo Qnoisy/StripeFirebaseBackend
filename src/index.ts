@@ -1,4 +1,3 @@
-// src/index.ts
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -9,18 +8,18 @@ dotenv.config();
 
 const app = express();
 app.use(cors({ origin: process.env.FRONTEND_URL }));
-app.use(express.json());
 
-// Основные маршруты
+// Используем `express.json()` только для `/api` маршрутов
+app.use('/api', express.json());
 app.use('/api', routes);
 
-// Webhook
+// Вебхук Stripe должен использовать `raw` body
 app.use('/webhook', webhook);
 
 // Error Handling Middleware
 app.use(
 	(
-		err: Error,
+		err: any,
 		req: express.Request,
 		res: express.Response,
 		next: express.NextFunction

@@ -6,15 +6,15 @@ import admin from './firebase-admin-export';
 const webhook = express.Router();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
-	apiVersion: '2024-01-01' as Stripe.LatestApiVersion,
+	apiVersion: '2025-04-30.basil',
 });
 
 // Используем raw body для webhook
 webhook.use(bodyParser.raw({ type: 'application/json' }));
 
-// Обработка Webhook
 webhook.post('/', async (req: Request, res: Response): Promise<void> => {
 	const sig = req.headers['stripe-signature'];
+
 	const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 	if (!endpointSecret) {
@@ -23,24 +23,24 @@ webhook.post('/', async (req: Request, res: Response): Promise<void> => {
 		return;
 	}
 
+	if (!sig) {
+		console.error('Stripe signature is missing.');
+		res.status(400).send('Stripe signature is missing.');
+		return;
+	}
+
+	let event: Stripe.Event;
+
 	try {
-		const event = stripe.webhooks.constructEvent(
-			req.body,
-			sig!,
-			endpointSecret
-		);
+		event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
 
 		switch (event.type) {
 			case 'checkout.session.completed':
 				const session = event.data.object as Stripe.Checkout.Session;
 				const userId = session.metadata?.userId;
-				if (!userId) {
-					console.warn(
-						`No userId found in session metadata for session: ${session.id}`
-					);
-				}
-				console.log('Webhook received:', event.type);
+
 				if (userId) {
+					console.log(`✅ Webhook received for user: ${userId}`);
 					await admin.firestore().collection('purchases').doc(session.id).set({
 						userId,
 						sessionId: session.id,
@@ -57,12 +57,10 @@ webhook.post('/', async (req: Request, res: Response): Promise<void> => {
 		}
 
 		res.status(200).json({ received: true });
-		return;
 	} catch (err) {
-		const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-		console.error('Webhook Error:', errorMessage);
-		res.status(400).send(`Webhook Error: ${errorMessage}`);
-		return;
+		console.error('Webhook Error:', (err as Error).message);
+		res.status(400).send(`Webhook Error: ${(err as Error).message}`);
 	}
 });
+
 export default webhook;
