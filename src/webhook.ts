@@ -14,7 +14,6 @@ webhook.use(bodyParser.raw({ type: 'application/json' }));
 
 webhook.post('/', async (req: Request, res: Response): Promise<void> => {
 	const sig = req.headers['stripe-signature'];
-
 	const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 	if (!endpointSecret) {
@@ -38,25 +37,54 @@ webhook.post('/', async (req: Request, res: Response): Promise<void> => {
 			case 'checkout.session.completed':
 				const session = event.data.object as Stripe.Checkout.Session;
 				const userId = session.metadata?.userId;
+				const courseId = session.metadata?.courseId;
+				const sessionId = session.id;
 
-				if (userId) {
-					console.log(`✅ Webhook received for user: ${userId}`);
-					await admin.firestore().collection('purchases').doc(session.id).set({
-						userId,
-						sessionId: session.id,
-						courseAccess: true,
-						timestamp: admin.firestore.FieldValue.serverTimestamp(),
-					});
-
-					console.log(`✅ Purchase recorded for user ${userId}`);
+				if (!userId || !courseId) {
+					console.warn(`Missing userId or courseId for session: ${sessionId}`);
+					res.status(400).json({ error: 'Missing userId or courseId' });
+					return;
 				}
+
+				console.log(
+					`✅ Webhook received for user: ${userId}, course: ${courseId}, session: ${sessionId}`
+				);
+
+				const purchasesRef = admin.firestore().collection('purchases');
+
+				// Проверяем, куплен ли уже этот курс пользователем
+				const existingPurchaseQuery = await purchasesRef
+					.where('userId', '==', userId)
+					.where('courseId', '==', courseId)
+					.get();
+
+				if (!existingPurchaseQuery.empty) {
+					console.log(
+						`⚠️ User ${userId} has already purchased course ${courseId}`
+					);
+					res.status(200).json({ message: 'Course already purchased' });
+					return;
+				}
+
+				// Записываем новую покупку
+				await purchasesRef.doc(sessionId).set({
+					userId,
+					courseId,
+					sessionId,
+					courseAccess: true,
+					timestamp: admin.firestore.FieldValue.serverTimestamp(),
+				});
+
+				console.log(
+					`✅ Purchase recorded for user ${userId}, course ${courseId}`
+				);
+				res.status(200).json({ received: true });
 				break;
 
 			default:
 				console.warn(`Unhandled event type: ${event.type}`);
+				res.status(200).json({ received: true });
 		}
-
-		res.status(200).json({ received: true });
 	} catch (err) {
 		console.error('Webhook Error:', (err as Error).message);
 		res.status(400).send(`Webhook Error: ${(err as Error).message}`);

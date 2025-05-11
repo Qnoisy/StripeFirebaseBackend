@@ -33,21 +33,40 @@ webhook.post('/', async (req, res) => {
             case 'checkout.session.completed':
                 const session = event.data.object;
                 const userId = session.metadata?.userId;
-                if (userId) {
-                    console.log(`✅ Webhook received for user: ${userId}`);
-                    await firebase_admin_export_1.default.firestore().collection('purchases').doc(session.id).set({
-                        userId,
-                        sessionId: session.id,
-                        courseAccess: true,
-                        timestamp: firebase_admin_export_1.default.firestore.FieldValue.serverTimestamp(),
-                    });
-                    console.log(`✅ Purchase recorded for user ${userId}`);
+                const courseId = session.metadata?.courseId;
+                const sessionId = session.id;
+                if (!userId || !courseId) {
+                    console.warn(`Missing userId or courseId for session: ${sessionId}`);
+                    res.status(400).json({ error: 'Missing userId or courseId' });
+                    return;
                 }
+                console.log(`✅ Webhook received for user: ${userId}, course: ${courseId}, session: ${sessionId}`);
+                const purchasesRef = firebase_admin_export_1.default.firestore().collection('purchases');
+                // Проверяем, куплен ли уже этот курс пользователем
+                const existingPurchaseQuery = await purchasesRef
+                    .where('userId', '==', userId)
+                    .where('courseId', '==', courseId)
+                    .get();
+                if (!existingPurchaseQuery.empty) {
+                    console.log(`⚠️ User ${userId} has already purchased course ${courseId}`);
+                    res.status(200).json({ message: 'Course already purchased' });
+                    return;
+                }
+                // Записываем новую покупку
+                await purchasesRef.doc(sessionId).set({
+                    userId,
+                    courseId,
+                    sessionId,
+                    courseAccess: true,
+                    timestamp: firebase_admin_export_1.default.firestore.FieldValue.serverTimestamp(),
+                });
+                console.log(`✅ Purchase recorded for user ${userId}, course ${courseId}`);
+                res.status(200).json({ received: true });
                 break;
             default:
                 console.warn(`Unhandled event type: ${event.type}`);
+                res.status(200).json({ received: true });
         }
-        res.status(200).json({ received: true });
     }
     catch (err) {
         console.error('Webhook Error:', err.message);
